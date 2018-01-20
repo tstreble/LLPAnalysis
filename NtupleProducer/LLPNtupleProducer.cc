@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
   NanoAODTree* tree = new NanoAODTree(oldtree);
 
   TTree* tree_new=new TTree("LLPtree","LLPtree");
-  tree_new->AddFriend(oldtree);
+ 
 
   //New branches
   int _nMuon;
@@ -66,9 +66,9 @@ int main(int argc, char** argv) {
   tree_new->Branch("Electron_presel_index", &_Electron_presel_index, "Electron_presel_index[nElectron_presel]/I");
 
   tree_new->Branch("nJet",             &_nJet,             "nJet/I");
-  tree_new->Branch("Jet_isPresel",     &_Jet_isPresel,     "Jet_isPresel[nElectron]/O");
+  tree_new->Branch("Jet_isPresel",     &_Jet_isPresel,     "Jet_isPresel[nJet]/O");
   tree_new->Branch("nJet_presel",      &_nJet_presel,      "nJet_presel/I");
-  tree_new->Branch("Jet_presel_index", &_Jet_presel_index, "Jet_presel_index[nElectron_presel]/I");
+  tree_new->Branch("Jet_presel_index", &_Jet_presel_index, "Jet_presel_index[nJet_presel]/I");
 
 
 
@@ -161,8 +161,6 @@ int main(int argc, char** argv) {
 
   
   f_new->cd();
-
-  tree_new->GetListOfFriends()->Remove(tree_new->GetListOfFriends()->At(0));
   tree_new->AddFriend("Events",input.c_str());
 
   tree_new->Write();
