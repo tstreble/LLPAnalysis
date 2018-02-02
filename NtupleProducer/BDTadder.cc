@@ -31,7 +31,7 @@ TMVA::Reader* BookJetMVAReader(std::string basePath, std::string weightFileName)
    reader->AddVariable("jet_NumNeutralParticles", &jet_NHM);
    reader->AddVariable("jet_CHM", &jet_CHM);
 
-   reader->BookMVA("BDTG method", basePath+"/"+weightFileName);
+   reader->BookMVA("BDT method", basePath+"/"+weightFileName);
 
    return reader;
 }
@@ -90,8 +90,9 @@ int main(int argc, char** argv) {
   TMVA::Reader* MVA_sig1_light_reader = BookJetMVAReader("BDT_weights","/BDT_sig1_light_noExtVar_BDT.weights.xml");
   TMVA::Reader* MVA_sig1_b_reader = BookJetMVAReader("BDT_weights","/BDT_sig1_b_noExtVar_BDT.weights.xml");
 
+  int nentries = tree->GetEntries();
 
-  for (int iEntry = 0; iEntry < tree->GetEntries() ; iEntry++){
+  for (int iEntry = 0; iEntry < nentries ; iEntry++){
 
     tree->GetEntry(iEntry);
 
@@ -101,16 +102,17 @@ int main(int argc, char** argv) {
 
     for(unsigned int i_jet=0; i_jet<_nJet;i_jet++){
 
-      jet_NHF = tree->Jet_neHEF[i_jet];
-      jet_CHF = tree->Jet_chHEF[i_jet];
-      jet_NEMF = tree->Jet_neEmEF[i_jet];
+      //FIXME Remove the rawFactor when nanoAOD is fixed
+      jet_NHF = tree->Jet_neHEF[i_jet]/(1-tree->Jet_rawFactor[i_jet]);
+      jet_CHF = tree->Jet_chHEF[i_jet]/(1-tree->Jet_rawFactor[i_jet]);
+      jet_NEMF = tree->Jet_neEmEF[i_jet]/(1-tree->Jet_rawFactor[i_jet]);
       jet_NHM = tree->Jet_nNeutralConst[i_jet];
-      jet_CHM = tree->Jet_nChargedConst[i_jet];
+      jet_CHM = tree->Jet_nChargedConst[i_jet];      
 
-      _Jet_BDT_sig1000_light[i_jet] = MVA_sig1000_light_reader->EvaluateMVA("BDTG method");
-      _Jet_BDT_sig1000_b[i_jet] = MVA_sig1000_b_reader->EvaluateMVA("BDTG method");
-      _Jet_BDT_sig1_light[i_jet] = MVA_sig1_light_reader->EvaluateMVA("BDTG method");
-      _Jet_BDT_sig1_b[i_jet] = MVA_sig1_b_reader->EvaluateMVA("BDTG method");
+      _Jet_BDT_sig1000_light[i_jet] = MVA_sig1000_light_reader->EvaluateMVA("BDT method");
+      _Jet_BDT_sig1000_b[i_jet] = MVA_sig1000_b_reader->EvaluateMVA("BDT method");
+      _Jet_BDT_sig1_light[i_jet] = MVA_sig1_light_reader->EvaluateMVA("BDT method");
+      _Jet_BDT_sig1_b[i_jet] = MVA_sig1_b_reader->EvaluateMVA("BDT method");
         
     }
 

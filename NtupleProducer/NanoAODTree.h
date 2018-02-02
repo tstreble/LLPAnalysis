@@ -58,11 +58,12 @@ public :
    int Jet_muonIdx2[kJetMax];
    int Jet_electronIdx1[kJetMax];
    int Jet_electronIdx2[kJetMax];
-   int Jet_chHEF[kJetMax];
-   int Jet_neHEF[kJetMax];
-   int Jet_neEmEF[kJetMax];
+   float Jet_chHEF[kJetMax];
+   float Jet_neHEF[kJetMax];
+   float Jet_neEmEF[kJetMax];   
    int Jet_nChargedConst[kJetMax];
    int Jet_nNeutralConst[kJetMax];
+   float Jet_rawFactor[kJetMax];
 
    // methods
    NanoAODTree (TChain* tree);
@@ -129,6 +130,7 @@ void NanoAODTree::Init(TChain* tree)
   _tree->SetBranchAddress("Jet_neEmEF",&Jet_neEmEF);
   _tree->SetBranchAddress("Jet_nChargedConst",&Jet_nChargedConst);
   _tree->SetBranchAddress("Jet_nNeutralConst",&Jet_nNeutralConst);
+  _tree->SetBranchAddress("Jet_rawFactor",&Jet_rawFactor);
 
 }
 
