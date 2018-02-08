@@ -33,10 +33,9 @@ int main(int argc, char** argv) {
 
   TChain* oldtree = new TChain("Events");
   oldtree->Add(input.c_str());
-  
   NanoAODTree* tree = new NanoAODTree(oldtree);
 
-  TTree* tree_new=new TTree("LLPtree","LLPtree");
+  TTree* tree_new=new TTree("LLP_tree","LLP_tree");
  
 
   //New branches
@@ -52,8 +51,11 @@ int main(int argc, char** argv) {
 
   int _nJet;
   bool _Jet_isPresel[kJetMax];
+  bool _Jet_isSel[kJetMax];    
   int _nJet_presel;
-  int _Jet_presel_index[kJetMax];  
+  int _Jet_presel_index[kJetMax];      
+  int _nJet_sel;
+  int _Jet_sel_index[kJetMax];      
 
   tree_new->Branch("nMuon",             &_nMuon,             "nMuon/I");
   tree_new->Branch("Muon_isPresel",     &_Muon_isPresel,     "Muon_isPresel[nMuon]/O");
@@ -67,9 +69,11 @@ int main(int argc, char** argv) {
 
   tree_new->Branch("nJet",             &_nJet,             "nJet/I");
   tree_new->Branch("Jet_isPresel",     &_Jet_isPresel,     "Jet_isPresel[nJet]/O");
+  tree_new->Branch("Jet_isSel",        &_Jet_isSel,        "Jet_isSel[nJet]/O");
   tree_new->Branch("nJet_presel",      &_nJet_presel,      "nJet_presel/I");
   tree_new->Branch("Jet_presel_index", &_Jet_presel_index, "Jet_presel_index[nJet_presel]/I");
-
+  tree_new->Branch("nJet_sel",      &_nJet_sel,      "nJet_sel/I");
+  tree_new->Branch("Jet_sel_index", &_Jet_sel_index, "Jet_sel_index[nJet_sel]/I");
 
 
   for (int iEntry = 0; iEntry < tree->GetEntries() ; iEntry++){
@@ -127,6 +131,7 @@ int main(int argc, char** argv) {
     
     _nJet = tree->nJet;
     _nJet_presel = 0;
+    _nJet_sel = 0;
 
     for(unsigned int i_jet=0; i_jet<_nJet;i_jet++){
 
@@ -145,12 +150,22 @@ int main(int argc, char** argv) {
       else if(eleId1>0 && _Electron_isPresel[eleId1]) ispresel = false;
       else if(eleId2>0 && _Electron_isPresel[eleId2]) ispresel = false;
 
+      bool issel = ispresel && (tree->Jet_puId[i_jet]&1);
+
       _Jet_isPresel[i_jet] = ispresel;
+      _Jet_isSel[i_jet] = issel; //Tight PU jet ID
+      
 
       if(ispresel){
 	_Jet_presel_index[_nJet_presel] = i_jet;
 	_nJet_presel++;
+	if(issel){
+	  _Jet_sel_index[_nJet_sel] = i_jet;
+	  _nJet_sel++;
+	}
       }
+
+      
 
     }
             

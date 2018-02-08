@@ -65,10 +65,9 @@ int main(int argc, char** argv) {
 
   TChain* oldtree = new TChain("Events");
   oldtree->Add(input.c_str());
-  
   NanoAODTree* tree = new NanoAODTree(oldtree);
 
-  TTree* tree_new=new TTree("BDTtree","BDTtree");
+  TTree* tree_new=new TTree("BDT_tree","BDT_tree");
 
   //New branches
 
