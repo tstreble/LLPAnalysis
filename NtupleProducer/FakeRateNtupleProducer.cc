@@ -4,6 +4,7 @@
 #include "TChain.h"
 #include "TString.h"
 #include "TGraphAsymmErrors.h"
+#include "TH2F.h"
 
 #include "NanoAODTree.h"
 #include "LLPTree.h"
@@ -112,6 +113,24 @@ float fakerate_from_TGraph(TGraphAsymmErrors* graph, float pt){
 
 }
 
+
+
+
+float fakerate_from_TH2(TH2F* graph, float pt, float eta){
+
+  float absEta = fabs(eta);
+  int nbins_x = graph->GetXaxis()->GetNbins();
+  float pt_sat = min(pt,float(0.9999999*graph->GetXaxis()->GetBinLowEdge(nbins_x+1)));
+  
+  int bin = graph->FindBin(pt_sat,absEta);
+  float fake_rate = graph->GetBinContent(bin);
+
+  if(fake_rate>0)
+    return fake_rate;
+
+  return -1.;
+
+}
 
 
 
@@ -242,15 +261,23 @@ int main(int argc, char** argv) {
 
 
   TFile* f_fakerate_b = TFile::Open(fakerate_file_b.c_str());
-  TGraphAsymmErrors* gr_fakerate_high_CMVA_b = (TGraphAsymmErrors*)f_fakerate_b->Get("gr_CMVA_high_b");
-  TGraphAsymmErrors* gr_fakerate_high_CMVA_ec = (TGraphAsymmErrors*)f_fakerate_b->Get("gr_CMVA_high_ec");
-  f_fakerate_b->Close();
+  TH2F* gr_fakerate_high_CMVA = (TH2F*)f_fakerate_b->Get("gr_CMVA_high");
+  gr_fakerate_high_CMVA->SetDirectory(0);
 
+  //TGraphAsymmErrors* gr_fakerate_high_CMVA_b = (TGraphAsymmErrors*)f_fakerate_b->Get("gr_CMVA_high_b");
+  //TGraphAsymmErrors* gr_fakerate_high_CMVA_ec = (TGraphAsymmErrors*)f_fakerate_b->Get("gr_CMVA_high_ec"); 
+
+  f_fakerate_b->Close();
   
   TFile* f_fakerate_light = TFile::Open(fakerate_file_light.c_str());
-  TGraphAsymmErrors* gr_fakerate_low_CMVA_b = (TGraphAsymmErrors*)f_fakerate_light->Get("gr_CMVA_low_b");
-  TGraphAsymmErrors* gr_fakerate_low_CMVA_ec = (TGraphAsymmErrors*)f_fakerate_light->Get("gr_CMVA_low_ec");
+  TH2F* gr_fakerate_low_CMVA = (TH2F*)f_fakerate_light->Get("gr_CMVA_low");
+  gr_fakerate_low_CMVA->SetDirectory(0);
+
+  //TGraphAsymmErrors* gr_fakerate_low_CMVA_b = (TGraphAsymmErrors*)f_fakerate_light->Get("gr_CMVA_low_b");
+  //TGraphAsymmErrors* gr_fakerate_low_CMVA_ec = (TGraphAsymmErrors*)f_fakerate_light->Get("gr_CMVA_low_ec");
+
   f_fakerate_light->Close();
+
 
   TChain* oldLLPtree = new TChain("LLPtree");
   oldLLPtree->Add(input_LLP.c_str());
@@ -260,6 +287,7 @@ int main(int argc, char** argv) {
   TChain* oldtree = new TChain("Events");
   oldtree->Add(input.c_str());
   NanoAODTree* tree = new NanoAODTree(oldtree);  
+
 
   TTree* tree_new=new TTree("FakeRate_tree","FakeRate_tree");
  
@@ -300,17 +328,19 @@ int main(int argc, char** argv) {
       _Jet_FR[i_jet] = -1;
 
       if(CMVA>0.4432){
-	if(abs(eta)<1.479)
+	/*if(abs(eta)<1.479)
 	  _Jet_FR[i_jet] = fakerate_from_TGraph(gr_fakerate_high_CMVA_b,pt);
 	else if(abs(eta)>1.479 && abs(eta)<2.4)
-	  _Jet_FR[i_jet] = fakerate_from_TGraph(gr_fakerate_high_CMVA_ec,pt);
+	_Jet_FR[i_jet] = fakerate_from_TGraph(gr_fakerate_high_CMVA_ec,pt);*/
+	_Jet_FR[i_jet] = fakerate_from_TH2(gr_fakerate_high_CMVA,pt,eta);
       }
 
       else{
-	if(abs(eta)<1.479)
+	/*if(abs(eta)<1.479)
 	  _Jet_FR[i_jet] = fakerate_from_TGraph(gr_fakerate_low_CMVA_b,pt);
 	else if(abs(eta)>1.479 && abs(eta)<2.4)
-	  _Jet_FR[i_jet] = fakerate_from_TGraph(gr_fakerate_low_CMVA_ec,pt);
+	_Jet_FR[i_jet] = fakerate_from_TGraph(gr_fakerate_low_CMVA_ec,pt);*/
+	_Jet_FR[i_jet] = fakerate_from_TH2(gr_fakerate_low_CMVA,pt,eta);
       }
 
     }
