@@ -35,6 +35,8 @@ public :
    int nMuon;
    float Muon_pt[kMuonMax];
    float Muon_eta[kMuonMax];
+   float Muon_phi[kMuonMax];
+   float Muon_mass[kMuonMax];
    float Muon_dxy[kMuonMax];
    float Muon_dz[kMuonMax];
    float Muon_pfRelIso04_all[kMuonMax];
@@ -43,6 +45,8 @@ public :
    int nElectron;
    float Electron_pt[kElectronMax];
    float Electron_eta[kElectronMax];
+   float Electron_phi[kElectronMax];
+   float Electron_mass[kElectronMax];
    float Electron_dxy[kElectronMax];
    float Electron_dz[kElectronMax];
    float Electron_pfRelIso03_all[kElectronMax];
@@ -104,6 +108,8 @@ void NanoAODTree::Init(TChain* tree)
   _tree->SetBranchAddress("nMuon",&nMuon);  
   _tree->SetBranchAddress("Muon_pt",&Muon_pt);  
   _tree->SetBranchAddress("Muon_eta",&Muon_eta);
+  _tree->SetBranchAddress("Muon_phi",&Muon_phi);
+  _tree->SetBranchAddress("Muon_mass",&Muon_mass);
   _tree->SetBranchAddress("Muon_dxy",&Muon_dxy);
   _tree->SetBranchAddress("Muon_dz",&Muon_dz);
   _tree->SetBranchAddress("Muon_pfRelIso04_all",&Muon_pfRelIso04_all);
@@ -112,6 +118,8 @@ void NanoAODTree::Init(TChain* tree)
   _tree->SetBranchAddress("nElectron",&nElectron);  
   _tree->SetBranchAddress("Electron_pt",&Electron_pt);  
   _tree->SetBranchAddress("Electron_eta",&Electron_eta);
+  _tree->SetBranchAddress("Electron_phi",&Electron_phi);
+  _tree->SetBranchAddress("Electron_mass",&Electron_mass);
   _tree->SetBranchAddress("Electron_dxy",&Electron_dxy);
   _tree->SetBranchAddress("Electron_dz",&Electron_dz);
   _tree->SetBranchAddress("Electron_pfRelIso03_all",&Electron_pfRelIso03_all);

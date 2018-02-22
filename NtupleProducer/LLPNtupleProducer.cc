@@ -3,6 +3,7 @@
 #include "TTree.h"
 #include "TChain.h"
 #include "TString.h"
+#include "TLorentzVector.h"
 
 #include "NanoAODTree.h"
 
@@ -43,11 +44,13 @@ int main(int argc, char** argv) {
   bool _Muon_isPresel[kMuonMax];
   int _nMuon_presel;
   int _Muon_presel_index[kMuonMax];
+  float _DiMuon_mass;
 
   int _nElectron;
   bool _Electron_isPresel[kElectronMax];
   int _nElectron_presel;
   int _Electron_presel_index[kElectronMax];
+  float _DiElectron_mass;
 
   int _nJet;
   bool _Jet_isPresel[kJetMax];
@@ -60,12 +63,15 @@ int main(int argc, char** argv) {
   tree_new->Branch("nMuon",             &_nMuon,             "nMuon/I");
   tree_new->Branch("Muon_isPresel",     &_Muon_isPresel,     "Muon_isPresel[nMuon]/O");
   tree_new->Branch("nMuon_presel",      &_nMuon_presel,      "nMuon_presel/I");
-  tree_new->Branch("Muon_presel_index", &_Muon_presel_index, "_Muon_presel_index[nMuon_presel]/I");
+  tree_new->Branch("Muon_presel_index", &_Muon_presel_index, "Muon_presel_index[nMuon_presel]/I");
+  tree_new->Branch("DiMuon_mass",       &_DiMuon_mass,       "DiMuon_mass/F");
+
 
   tree_new->Branch("nElectron",             &_nElectron,             "nElectron/I");
   tree_new->Branch("Electron_isPresel",     &_Electron_isPresel,     "Electron_isPresel[nElectron]/O");
   tree_new->Branch("nElectron_presel",      &_nElectron_presel,      "nElectron_presel/I");
   tree_new->Branch("Electron_presel_index", &_Electron_presel_index, "Electron_presel_index[nElectron_presel]/I");
+  tree_new->Branch("DiElectron_mass",       &_DiElectron_mass,       "DiElectron_mass/F");
 
   tree_new->Branch("nJet",             &_nJet,             "nJet/I");
   tree_new->Branch("Jet_isPresel",     &_Jet_isPresel,     "Jet_isPresel[nJet]/O");
@@ -85,6 +91,7 @@ int main(int argc, char** argv) {
 
     _nMuon = tree->nMuon;
     _nMuon_presel = 0;
+    _DiMuon_mass = 0;
 
     for(unsigned int i_mu=0; i_mu<_nMuon;i_mu++){
 
@@ -104,6 +111,14 @@ int main(int argc, char** argv) {
 
     }
 
+    if(_nMuon_presel == 2){
+      int i_mu1 = _Muon_presel_index[0];
+      int i_mu2 = _Muon_presel_index[1];
+      TLorentzVector Muon1, Muon2;
+      Muon1.SetPtEtaPhiM(tree->Muon_pt[i_mu1],tree->Muon_eta[i_mu1],tree->Muon_phi[i_mu1],tree->Muon_mass[i_mu1]);
+      Muon2.SetPtEtaPhiM(tree->Muon_pt[i_mu2],tree->Muon_eta[i_mu2],tree->Muon_phi[i_mu2],tree->Muon_mass[i_mu2]);
+      _DiMuon_mass = (Muon1+Muon2).M();
+    }
 
     _nElectron = tree->nElectron;
     _nElectron_presel = 0;
@@ -128,6 +143,14 @@ int main(int argc, char** argv) {
 
     }
 
+    if(_nElectron_presel == 2){
+      int i_ele1 = _Electron_presel_index[0];
+      int i_ele2 = _Electron_presel_index[1];
+      TLorentzVector Electron1, Electron2;
+      Electron1.SetPtEtaPhiM(tree->Electron_pt[i_ele1],tree->Electron_eta[i_ele1],tree->Electron_phi[i_ele1],tree->Electron_mass[i_ele1]);
+      Electron2.SetPtEtaPhiM(tree->Electron_pt[i_ele2],tree->Electron_eta[i_ele2],tree->Electron_phi[i_ele2],tree->Electron_mass[i_ele2]);
+      _DiElectron_mass = (Electron1+Electron2).M();
+    }
     
     _nJet = tree->nJet;
     _nJet_presel = 0;
