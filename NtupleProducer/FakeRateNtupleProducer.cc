@@ -279,7 +279,7 @@ int main(int argc, char** argv) {
   f_fakerate_light->Close();
 
 
-  TChain* oldLLPtree = new TChain("LLPtree");
+  TChain* oldLLPtree = new TChain("LLP_tree");
   oldLLPtree->Add(input_LLP.c_str());
   LLPTree* LLPtree = new LLPTree(oldLLPtree);
   LLPtree->GetEntries();
