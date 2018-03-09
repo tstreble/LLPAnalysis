@@ -70,6 +70,9 @@ public :
    float Jet_rawFactor[kJetMax];
    float Jet_btagCMVA[kJetMax];
    int Jet_puId[kJetMax];
+   float Jet_qgl[kJetMax];
+   int Jet_partonFlavour[kJetMax];
+
 
    // methods
    NanoAODTree (TChain* tree);
@@ -143,6 +146,8 @@ void NanoAODTree::Init(TChain* tree)
   _tree->SetBranchAddress("Jet_rawFactor",&Jet_rawFactor);
   _tree->SetBranchAddress("Jet_btagCMVA",&Jet_btagCMVA);
   _tree->SetBranchAddress("Jet_puId",&Jet_puId);
+  _tree->SetBranchAddress("Jet_qgl",&Jet_qgl);
+  _tree->SetBranchAddress("Jet_partonFlavour",&Jet_partonFlavour);
 
 }
 
