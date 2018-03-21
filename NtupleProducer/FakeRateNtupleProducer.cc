@@ -129,7 +129,10 @@ map<int,float> fakerate_from_TH2(TH2F* graph, float pt, float eta){
   float fake_rate_up = fake_rate + graph->GetBinError(bin);
   float fake_rate_down = max(fake_rate - graph->GetBinError(bin),0.);
 
-  if(fake_rate_down<=0.) cout<<"Negative FR down, please investigate"<<endl;
+  if(fake_rate_down<=0. && graph->GetXaxis()->FindBin(pt)>0 && graph->GetYaxis()->FindBin(absEta)<=graph->GetYaxis()->GetNbins()){
+    cout<<"Negative FR down, please investigate"<<endl;
+    cout<<"pt="<<pt<<" eta="<<eta<<endl;
+  }
 
   map<int,float> FR;
   FR[0] = fake_rate;
@@ -146,6 +149,37 @@ map<int,float> fakerate_from_TH2(TH2F* graph, float pt, float eta){
   return FR;
 
 }
+
+
+
+
+
+map<TString,float> fakerate_from_FRreader(pair<TH2F*,map<TString,TGraphAsymmErrors*> > reader, float pt, float eta){
+
+  TH2F* histo = reader.first;
+  float absEta = fabs(eta);
+  int nbins_x = histo->GetXaxis()->GetNbins();
+  int nbins_y = histo->GetYaxis()->GetNbins();
+  float pt_sat = min(pt,float(0.9999999*histo->GetXaxis()->GetBinLowEdge(nbins_x+1)));
+  
+
+  map<TString,TGraphAsymmErrors*> graphs = reader.second;
+
+  int bin = histo->FindBin(pt_sat,absEta);
+  map<TString,float> FR;
+  for(auto& gr : graphs) FR[gr.first] = gr.second->Eval(bin);
+
+  if(FR["nomin"]>0 && pt>histo->GetXaxis()->GetBinLowEdge(1) && absEta<histo->GetYaxis()->GetBinLowEdge(nbins_y+1))
+    return FR;
+
+  for(auto& gr : graphs) FR[gr.first] = -1;
+
+  return FR;
+
+}
+
+
+
 
 
 
@@ -300,17 +334,39 @@ int main(int argc, char** argv) {
   TFile* f_fakerate_b = TFile::Open(fakerate_file_b.c_str());
   TH2F* gr_fakerate_high_CMVA = (TH2F*)f_fakerate_b->Get("gr_CMVA_high");
   gr_fakerate_high_CMVA->SetDirectory(0);
+  map<TString,TGraphAsymmErrors*> gr_fakerate_high_CMVA_unfold;
+  gr_fakerate_high_CMVA_unfold["nomin"] = (TGraphAsymmErrors*)f_fakerate_b->Get("gr_CMVA_high_unfold");
+  gr_fakerate_high_CMVA_unfold["up"] = (TGraphAsymmErrors*)f_fakerate_b->Get("gr_CMVA_high_unfold_Up");
+  gr_fakerate_high_CMVA_unfold["down"] = (TGraphAsymmErrors*)f_fakerate_b->Get("gr_CMVA_high_unfold_Down");
+  gr_fakerate_high_CMVA_unfold["ptUp"] = (TGraphAsymmErrors*)f_fakerate_b->Get("gr_CMVA_high_unfold_ptUp");
+  gr_fakerate_high_CMVA_unfold["ptDown"] = (TGraphAsymmErrors*)f_fakerate_b->Get("gr_CMVA_high_unfold_ptDown");
   f_fakerate_b->Close();
+  pair<TH2F*,map<TString,TGraphAsymmErrors*> > FR_reader_high_CMVA = make_pair(gr_fakerate_high_CMVA,gr_fakerate_high_CMVA_unfold);
   
   TFile* f_fakerate_light_quark = TFile::Open(fakerate_file_light_quark.c_str());
   TH2F* gr_fakerate_low_CMVA_quark = (TH2F*)f_fakerate_light_quark->Get("gr_CMVA_low_QGL_high");
   gr_fakerate_low_CMVA_quark->SetDirectory(0);
+  map<TString,TGraphAsymmErrors*> gr_fakerate_low_CMVA_quark_unfold;
+  gr_fakerate_low_CMVA_quark_unfold["nomin"] = (TGraphAsymmErrors*)f_fakerate_light_quark->Get("gr_CMVA_low_QGL_high_unfold");
+  gr_fakerate_low_CMVA_quark_unfold["up"] = (TGraphAsymmErrors*)f_fakerate_light_quark->Get("gr_CMVA_low_QGL_high_unfold_Up");
+  gr_fakerate_low_CMVA_quark_unfold["down"] = (TGraphAsymmErrors*)f_fakerate_light_quark->Get("gr_CMVA_low_QGL_high_unfold_Down");
+  gr_fakerate_low_CMVA_quark_unfold["ptUp"] = (TGraphAsymmErrors*)f_fakerate_light_quark->Get("gr_CMVA_low_QGL_high_unfold_ptUp");
+  gr_fakerate_low_CMVA_quark_unfold["ptDown"] = (TGraphAsymmErrors*)f_fakerate_light_quark->Get("gr_CMVA_low_QGL_high_unfold_ptDown");
   f_fakerate_light_quark->Close();
+  pair<TH2F*,map<TString,TGraphAsymmErrors*> > FR_reader_low_CMVA_quark = make_pair(gr_fakerate_low_CMVA_quark,gr_fakerate_low_CMVA_quark_unfold);
+
 
   TFile* f_fakerate_light_gluon = TFile::Open(fakerate_file_light_gluon.c_str());
   TH2F* gr_fakerate_low_CMVA_gluon = (TH2F*)f_fakerate_light_gluon->Get("gr_CMVA_low_QGL_low");
   gr_fakerate_low_CMVA_gluon->SetDirectory(0);
+  map<TString,TGraphAsymmErrors*> gr_fakerate_low_CMVA_gluon_unfold;
+  gr_fakerate_low_CMVA_gluon_unfold["nomin"] = (TGraphAsymmErrors*)f_fakerate_light_gluon->Get("gr_CMVA_low_QGL_low_unfold");
+  gr_fakerate_low_CMVA_gluon_unfold["up"] = (TGraphAsymmErrors*)f_fakerate_light_gluon->Get("gr_CMVA_low_QGL_low_unfold_Up");
+  gr_fakerate_low_CMVA_gluon_unfold["down"] = (TGraphAsymmErrors*)f_fakerate_light_gluon->Get("gr_CMVA_low_QGL_low_unfold_Down");
+  gr_fakerate_low_CMVA_gluon_unfold["ptUp"] = (TGraphAsymmErrors*)f_fakerate_light_gluon->Get("gr_CMVA_low_QGL_low_unfold_ptUp");
+  gr_fakerate_low_CMVA_gluon_unfold["ptDown"] = (TGraphAsymmErrors*)f_fakerate_light_gluon->Get("gr_CMVA_low_QGL_low_unfold_ptDown");
   f_fakerate_light_gluon->Close();
+  pair<TH2F*,map<TString,TGraphAsymmErrors*> > FR_reader_low_CMVA_gluon = make_pair(gr_fakerate_low_CMVA_gluon,gr_fakerate_low_CMVA_gluon_unfold);
 
 
   TChain* oldLLPtree = new TChain("LLP_tree");
@@ -329,41 +385,101 @@ int main(int argc, char** argv) {
   int _nJet;
   int _nJet_sel;
   float _Jet_FR[kJetMax];
-  float _Jet_FR_up[kJetMax];
-  float _Jet_FR_down[kJetMax];
+  float _Jet_FR_b_up[kJetMax];
+  float _Jet_FR_b_down[kJetMax];
+  float _Jet_FR_q_up[kJetMax];
+  float _Jet_FR_q_down[kJetMax];
+  float _Jet_FR_g_up[kJetMax];
+  float _Jet_FR_g_down[kJetMax];
+  float _Jet_FR_b_pt_up[kJetMax];
+  float _Jet_FR_b_pt_down[kJetMax];
+  float _Jet_FR_q_pt_up[kJetMax];
+  float _Jet_FR_q_pt_down[kJetMax];
+  float _Jet_FR_g_pt_up[kJetMax];
+  float _Jet_FR_g_pt_down[kJetMax];
 
   float _EventWeight_FR_JetBin[kJetMax];
-  float _EventWeight_FR_JetBin_up[kJetMax];
-  float _EventWeight_FR_JetBin_down[kJetMax];
+  float _EventWeight_FR_JetBin_b_up[kJetMax];
+  float _EventWeight_FR_JetBin_b_down[kJetMax];
+  float _EventWeight_FR_JetBin_q_up[kJetMax];
+  float _EventWeight_FR_JetBin_q_down[kJetMax];
+  float _EventWeight_FR_JetBin_g_up[kJetMax];
+  float _EventWeight_FR_JetBin_g_down[kJetMax];
+  float _EventWeight_FR_JetBin_b_pt_up[kJetMax];
+  float _EventWeight_FR_JetBin_b_pt_down[kJetMax];
+  float _EventWeight_FR_JetBin_q_pt_up[kJetMax];
+  float _EventWeight_FR_JetBin_q_pt_down[kJetMax];
+  float _EventWeight_FR_JetBin_g_pt_up[kJetMax];
+  float _EventWeight_FR_JetBin_g_pt_down[kJetMax];
 
   float _EventWeight_FR;
-  float _EventWeight_FR_up;
-  float _EventWeight_FR_down;
+  float _EventWeight_FR_b_up;
+  float _EventWeight_FR_b_down;
+  float _EventWeight_FR_q_up;
+  float _EventWeight_FR_q_down;
+  float _EventWeight_FR_g_up;
+  float _EventWeight_FR_g_down;
+  float _EventWeight_FR_b_pt_up;
+  float _EventWeight_FR_b_pt_down;
+  float _EventWeight_FR_q_pt_up;
+  float _EventWeight_FR_q_pt_down;
+  float _EventWeight_FR_g_pt_up;
+  float _EventWeight_FR_g_pt_down;
 
   tree_new->Branch("nJet",             &_nJet,             "nJet/I");
   tree_new->Branch("nJet_sel",         &_nJet_sel,         "nJet_sel/I");
   tree_new->Branch("Jet_FR",           &_Jet_FR,           "Jet_FR[nJet]/F");
-  tree_new->Branch("Jet_FR_up",        &_Jet_FR_up,        "Jet_FR_up[nJet]/F");
-  tree_new->Branch("Jet_FR_down",      &_Jet_FR_down,      "Jet_FR_down[nJet]/F");
+  tree_new->Branch("Jet_FR_b_up",      &_Jet_FR_b_up,        "Jet_FR_b_up[nJet]/F");
+  tree_new->Branch("Jet_FR_b_down",    &_Jet_FR_b_down,      "Jet_FR_b_down[nJet]/F");
+  tree_new->Branch("Jet_FR_q_up",      &_Jet_FR_q_up,        "Jet_FR_q_up[nJet]/F");
+  tree_new->Branch("Jet_FR_q_down",    &_Jet_FR_q_down,      "Jet_FR_q_down[nJet]/F");
+  tree_new->Branch("Jet_FR_g_up",      &_Jet_FR_g_up,        "Jet_FR_g_up[nJet]/F");
+  tree_new->Branch("Jet_FR_g_down",    &_Jet_FR_g_down,      "Jet_FR_g_down[nJet]/F");
+  tree_new->Branch("Jet_FR_b_pt_up",   &_Jet_FR_b_pt_up,     "Jet_FR_b_pt_up[nJet]/F");
+  tree_new->Branch("Jet_FR_b_pt_down", &_Jet_FR_b_pt_down,   "Jet_FR_b_pt_down[nJet]/F");
+  tree_new->Branch("Jet_FR_q_pt_up",   &_Jet_FR_q_pt_up,     "Jet_FR_q_pt_up[nJet]/F");
+  tree_new->Branch("Jet_FR_q_pt_down", &_Jet_FR_q_pt_down,   "Jet_FR_q_pt_down[nJet]/F");
+  tree_new->Branch("Jet_FR_g_pt_up",   &_Jet_FR_g_pt_up,     "Jet_FR_g_pt_up[nJet]/F");
+  tree_new->Branch("Jet_FR_g_pt_down", &_Jet_FR_g_pt_down,   "Jet_FR_g_pt_down[nJet]/F");
 
   tree_new->Branch("EventWeight_FR_JetBin",           &_EventWeight_FR_JetBin,           "EventWeight_FR_JetBin[nJet_sel]/F");
-  tree_new->Branch("EventWeight_FR_JetBin_up",           &_EventWeight_FR_JetBin_up,           "EventWeight_FR_JetBin_up[nJet_sel]/F");
-  tree_new->Branch("EventWeight_FR_JetBin_down",           &_EventWeight_FR_JetBin_down,           "EventWeight_FR_JetBin_down[nJet_sel]/F");
+  tree_new->Branch("EventWeight_FR_JetBin_b_up",      &_EventWeight_FR_JetBin_b_up,      "EventWeight_FR_JetBin_b_up[nJet_sel]/F");
+  tree_new->Branch("EventWeight_FR_JetBin_b_down",    &_EventWeight_FR_JetBin_b_down,    "EventWeight_FR_JetBin_b_down[nJet_sel]/F");
+  tree_new->Branch("EventWeight_FR_JetBin_q_up",      &_EventWeight_FR_JetBin_q_up,      "EventWeight_FR_JetBin_q_up[nJet_sel]/F");
+  tree_new->Branch("EventWeight_FR_JetBin_q_down",    &_EventWeight_FR_JetBin_q_down,    "EventWeight_FR_JetBin_q_down[nJet_sel]/F");
+  tree_new->Branch("EventWeight_FR_JetBin_g_up",      &_EventWeight_FR_JetBin_g_up,      "EventWeight_FR_JetBin_g_up[nJet_sel]/F");
+  tree_new->Branch("EventWeight_FR_JetBin_q_down",    &_EventWeight_FR_JetBin_g_down,    "EventWeight_FR_JetBin_g_down[nJet_sel]/F");
+  tree_new->Branch("EventWeight_FR_JetBin_b_pt_up",   &_EventWeight_FR_JetBin_b_pt_up,      "EventWeight_FR_JetBin_b_pt_up[nJet_sel]/F");
+  tree_new->Branch("EventWeight_FR_JetBin_b_pt_down", &_EventWeight_FR_JetBin_b_pt_down,    "EventWeight_FR_JetBin_b_pt_down[nJet_sel]/F");
+  tree_new->Branch("EventWeight_FR_JetBin_q_pt_up",   &_EventWeight_FR_JetBin_q_pt_up,      "EventWeight_FR_JetBin_q_pt_up[nJet_sel]/F");
+  tree_new->Branch("EventWeight_FR_JetBin_q_pt_down", &_EventWeight_FR_JetBin_q_pt_down,    "EventWeight_FR_JetBin_q_pt_down[nJet_sel]/F");
+  tree_new->Branch("EventWeight_FR_JetBin_g_pt_up",   &_EventWeight_FR_JetBin_g_pt_up,      "EventWeight_FR_JetBin_g_pt_up[nJet_sel]/F");
+  tree_new->Branch("EventWeight_FR_JetBin_q_pt_down", &_EventWeight_FR_JetBin_g_pt_down,    "EventWeight_FR_JetBin_g_pt_down[nJet_sel]/F");
 
 
   tree_new->Branch("EventWeight_FR",           &_EventWeight_FR,           "EventWeight_FR/F");
-  tree_new->Branch("EventWeight_FR_up",        &_EventWeight_FR_up,        "EventWeight_FR_up/F");
-  tree_new->Branch("EventWeight_FR_down",      &_EventWeight_FR_down,      "EventWeight_FR_down/F");
+  tree_new->Branch("EventWeight_FR_b_up",      &_EventWeight_FR_b_up,        "EventWeight_FR_b_up/F");
+  tree_new->Branch("EventWeight_FR_b_down",    &_EventWeight_FR_b_down,      "EventWeight_FR_b_down/F");
+  tree_new->Branch("EventWeight_FR_q_up",      &_EventWeight_FR_q_up,        "EventWeight_FR_q_up/F");
+  tree_new->Branch("EventWeight_FR_q_down",    &_EventWeight_FR_q_down,      "EventWeight_FR_q_down/F");
+  tree_new->Branch("EventWeight_FR_g_up",      &_EventWeight_FR_g_up,        "EventWeight_FR_g_up/F");
+  tree_new->Branch("EventWeight_FR_g_down",    &_EventWeight_FR_g_down,      "EventWeight_FR_g_down/F");
+  tree_new->Branch("EventWeight_FR_b_pt_up",   &_EventWeight_FR_b_pt_up,     "EventWeight_FR_b_pt_up/F");
+  tree_new->Branch("EventWeight_FR_b_pt_down", &_EventWeight_FR_b_pt_down,   "EventWeight_FR_b_pt_down/F");
+  tree_new->Branch("EventWeight_FR_q_pt_up",   &_EventWeight_FR_q_pt_up,     "EventWeight_FR_q_pt_up/F");
+  tree_new->Branch("EventWeight_FR_q_pt_down", &_EventWeight_FR_q_pt_down,   "EventWeight_FR_q_pt_down/F");
+  tree_new->Branch("EventWeight_FR_g_pt_up",   &_EventWeight_FR_g_pt_up,     "EventWeight_FR_g_pt_up/F");
+  tree_new->Branch("EventWeight_FR_g_pt_down", &_EventWeight_FR_g_pt_down,   "EventWeight_FR_g_pt_down/F");
 
 
-
-  for (int iEntry = 0; iEntry < tree->GetEntries() ; iEntry++){
+  //for (int iEntry = 0; iEntry < tree->GetEntries() ; iEntry++){
+  for (int iEntry = 0; iEntry < 10 ; iEntry++){
 
     tree->GetEntry(iEntry);
     LLPtree->GetEntry(iEntry);
 
 
-    if(iEntry%1000==0) 
+    //if(iEntry%1000==0) 
       cout<<"Entry #"<<iEntry<<endl;
 
     _nJet = tree->nJet;
@@ -375,37 +491,104 @@ int main(int argc, char** argv) {
       float CMVA = tree->Jet_btagCMVA[i_jet];
       float qgl = tree->Jet_qgl[i_jet];
 
-      map<int,float> FR;
-
+      map<TString,float> FR;
 
       if(CMVA>0.4432){
-	FR = fakerate_from_TH2(gr_fakerate_high_CMVA,pt,eta);
+
+	FR = fakerate_from_FRreader(FR_reader_high_CMVA,pt,eta);	
+
+	_Jet_FR[i_jet] = FR["nomin"];
+	_Jet_FR_b_up[i_jet] = FR["up"];
+	_Jet_FR_b_down[i_jet] = FR["down"];
+	_Jet_FR_q_up[i_jet] = FR["nomin"];
+	_Jet_FR_q_down[i_jet] = FR["nomin"];
+	_Jet_FR_g_up[i_jet] = FR["nomin"];
+	_Jet_FR_g_down[i_jet] = FR["nomin"];
+	_Jet_FR_b_pt_up[i_jet] = FR["ptUp"];
+	_Jet_FR_b_pt_down[i_jet] = FR["ptDown"];
+	_Jet_FR_q_pt_up[i_jet] = FR["nomin"];
+	_Jet_FR_q_pt_down[i_jet] = FR["nomin"];
+	_Jet_FR_g_pt_up[i_jet] = FR["nomin"];
+	_Jet_FR_g_pt_down[i_jet] = FR["nomin"];
+
       }
 
       else{
-	if(qgl>0.5)
-	  FR = fakerate_from_TH2(gr_fakerate_low_CMVA_quark,pt,eta);
-	else
-	  FR = fakerate_from_TH2(gr_fakerate_low_CMVA_gluon,pt,eta);
+	if(qgl>0.5){
+
+	  FR = fakerate_from_FRreader(FR_reader_low_CMVA_quark,pt,eta);	
+
+	  _Jet_FR[i_jet] = FR["nomin"];
+	  _Jet_FR_b_up[i_jet] = FR["nomin"];
+	  _Jet_FR_b_down[i_jet] = FR["nomin"];
+	  _Jet_FR_q_up[i_jet] = FR["up"];
+	  _Jet_FR_q_down[i_jet] = FR["down"];
+	  _Jet_FR_g_up[i_jet] = FR["nomin"];
+	  _Jet_FR_g_down[i_jet] = FR["nomin"];
+	  _Jet_FR_b_pt_up[i_jet] = FR["nomin"];
+	  _Jet_FR_b_pt_down[i_jet] = FR["nomin"];
+	  _Jet_FR_q_pt_up[i_jet] = FR["ptUp"];
+	  _Jet_FR_q_pt_down[i_jet] = FR["ptDown"];
+	  _Jet_FR_g_pt_up[i_jet] = FR["nomin"];
+	  _Jet_FR_g_pt_down[i_jet] = FR["nomin"];
+  
+	}
+	else{
+
+	  FR = fakerate_from_FRreader(FR_reader_low_CMVA_gluon,pt,eta);	
+
+	  _Jet_FR[i_jet] = FR["nomin"];
+	  _Jet_FR_b_up[i_jet] = FR["nomin"];
+	  _Jet_FR_b_down[i_jet] = FR["nomin"];
+	  _Jet_FR_q_up[i_jet] = FR["nomin"];
+	  _Jet_FR_q_down[i_jet] = FR["nomin"];
+	  _Jet_FR_g_up[i_jet] = FR["up"];
+	  _Jet_FR_g_down[i_jet] = FR["down"];
+	  _Jet_FR_b_pt_up[i_jet] = FR["nomin"];
+	  _Jet_FR_b_pt_down[i_jet] = FR["nomin"];
+	  _Jet_FR_q_pt_up[i_jet] = FR["nomin"];
+	  _Jet_FR_q_pt_down[i_jet] = FR["nomin"];
+	  _Jet_FR_g_pt_up[i_jet] = FR["ptUp"];
+	  _Jet_FR_g_pt_down[i_jet] = FR["ptDown"];
+
+	}
       }
 
-      _Jet_FR[i_jet] = FR[0];
-      _Jet_FR_up[i_jet] = FR[+1];
-      _Jet_FR_down[i_jet] = FR[-1];
+
       
     }
 
 
     _nJet_sel = LLPtree->nJet_sel;
     _EventWeight_FR = 0;
-    _EventWeight_FR_up = 0;
-    _EventWeight_FR_down = 0;
+    _EventWeight_FR_b_up = 0;
+    _EventWeight_FR_b_down = 0;
+    _EventWeight_FR_q_up = 0;
+    _EventWeight_FR_q_down = 0;
+    _EventWeight_FR_g_up = 0;
+    _EventWeight_FR_g_down = 0;
+    _EventWeight_FR_b_pt_up = 0;
+    _EventWeight_FR_b_pt_down = 0;
+    _EventWeight_FR_q_pt_up = 0;
+    _EventWeight_FR_q_pt_down = 0;
+    _EventWeight_FR_g_pt_up = 0;
+    _EventWeight_FR_g_pt_down = 0;
     
     for(int kJet = 1; kJet<=_nJet_sel; kJet++){
       
       _EventWeight_FR_JetBin[kJet-1] = 0;      
-      _EventWeight_FR_JetBin_up[kJet-1] = 0;      
-      _EventWeight_FR_JetBin_down[kJet-1] = 0;      
+      _EventWeight_FR_JetBin_b_up[kJet-1] = 0;      
+      _EventWeight_FR_JetBin_b_down[kJet-1] = 0;      
+      _EventWeight_FR_JetBin_q_up[kJet-1] = 0;      
+      _EventWeight_FR_JetBin_q_down[kJet-1] = 0;    
+      _EventWeight_FR_JetBin_g_up[kJet-1] = 0;      
+      _EventWeight_FR_JetBin_g_down[kJet-1] = 0;   
+      _EventWeight_FR_JetBin_b_pt_up[kJet-1] = 0;      
+      _EventWeight_FR_JetBin_b_pt_down[kJet-1] = 0;      
+      _EventWeight_FR_JetBin_q_pt_up[kJet-1] = 0;      
+      _EventWeight_FR_JetBin_q_pt_down[kJet-1] = 0;    
+      _EventWeight_FR_JetBin_g_pt_up[kJet-1] = 0;      
+      _EventWeight_FR_JetBin_g_pt_down[kJet-1] = 0;        
 
       vector<vector<int> > combinations = getAll_combinations(_nJet_sel,kJet);
       vector<vector<int> > combinations_compl = getAll_combinations_compl(_nJet_sel,kJet);
@@ -413,31 +596,82 @@ int main(int argc, char** argv) {
       for(unsigned int i_comb = 0; i_comb<combinations.size(); i_comb++){
 
 	float EventWeight_FR_comb = 1;
-	float EventWeight_FR_comb_up = 1;
-	float EventWeight_FR_comb_down = 1;
+	float EventWeight_FR_comb_b_up = 1;
+	float EventWeight_FR_comb_b_down = 1;
+	float EventWeight_FR_comb_q_up = 1;
+	float EventWeight_FR_comb_q_down = 1;
+	float EventWeight_FR_comb_g_up = 1;
+	float EventWeight_FR_comb_g_down = 1;
+	float EventWeight_FR_comb_b_pt_up = 1;
+	float EventWeight_FR_comb_b_pt_down = 1;
+	float EventWeight_FR_comb_q_pt_up = 1;
+	float EventWeight_FR_comb_q_pt_down = 1;
+	float EventWeight_FR_comb_g_pt_up = 1;
+	float EventWeight_FR_comb_g_pt_down = 1;
+
 
 	for(auto i_jet : combinations[i_comb]){
 	  int i_jet_sel = LLPtree->Jet_sel_index[i_jet];	  
 	  EventWeight_FR_comb *= _Jet_FR[i_jet_sel];
-	  EventWeight_FR_comb_up *= _Jet_FR_up[i_jet_sel];
-	  EventWeight_FR_comb_down *= _Jet_FR_down[i_jet_sel];
+	  EventWeight_FR_comb_b_up *= _Jet_FR_b_up[i_jet_sel];
+	  EventWeight_FR_comb_b_down *= _Jet_FR_b_down[i_jet_sel];
+	  EventWeight_FR_comb_q_up *= _Jet_FR_q_up[i_jet_sel];
+	  EventWeight_FR_comb_q_down *= _Jet_FR_q_down[i_jet_sel];
+	  EventWeight_FR_comb_g_up *= _Jet_FR_g_up[i_jet_sel];
+	  EventWeight_FR_comb_g_down *= _Jet_FR_g_down[i_jet_sel];
+	  EventWeight_FR_comb_b_pt_up *= _Jet_FR_b_pt_up[i_jet_sel];
+	  EventWeight_FR_comb_b_pt_down *= _Jet_FR_b_pt_down[i_jet_sel];
+	  EventWeight_FR_comb_q_pt_up *= _Jet_FR_q_pt_up[i_jet_sel];
+	  EventWeight_FR_comb_q_pt_down *= _Jet_FR_q_pt_down[i_jet_sel];
+	  EventWeight_FR_comb_g_pt_up *= _Jet_FR_g_pt_up[i_jet_sel];
+	  EventWeight_FR_comb_g_pt_down *= _Jet_FR_g_pt_down[i_jet_sel];
 	}
 	for(auto i_jet : combinations_compl[i_comb]){
 	  int i_jet_sel = LLPtree->Jet_sel_index[i_jet];	  
 	  EventWeight_FR_comb *= (1-_Jet_FR[i_jet_sel]);
-	  EventWeight_FR_comb_up *= (1-_Jet_FR_up[i_jet_sel]);
-	  EventWeight_FR_comb_down *= (1-_Jet_FR_down[i_jet_sel]);
+	  EventWeight_FR_comb_b_up *= (1-_Jet_FR_b_up[i_jet_sel]);
+	  EventWeight_FR_comb_b_down *= (1-_Jet_FR_b_down[i_jet_sel]);
+	  EventWeight_FR_comb_q_up *= (1-_Jet_FR_q_up[i_jet_sel]);
+	  EventWeight_FR_comb_q_down *= (1-_Jet_FR_q_down[i_jet_sel]);
+	  EventWeight_FR_comb_g_up *= (1-_Jet_FR_q_up[i_jet_sel]);
+	  EventWeight_FR_comb_g_down *= (1-_Jet_FR_q_down[i_jet_sel]);
+	  EventWeight_FR_comb_b_pt_up *= (1-_Jet_FR_b_pt_up[i_jet_sel]);
+	  EventWeight_FR_comb_b_pt_down *= (1-_Jet_FR_b_pt_down[i_jet_sel]);
+	  EventWeight_FR_comb_q_pt_up *= (1-_Jet_FR_q_pt_up[i_jet_sel]);
+	  EventWeight_FR_comb_q_pt_down *= (1-_Jet_FR_q_pt_down[i_jet_sel]);
+	  EventWeight_FR_comb_g_pt_up *= (1-_Jet_FR_q_pt_up[i_jet_sel]);
+	  EventWeight_FR_comb_g_pt_down *= (1-_Jet_FR_q_pt_down[i_jet_sel]);
 	}
 	
 	_EventWeight_FR_JetBin[kJet-1] += EventWeight_FR_comb;
-	_EventWeight_FR_JetBin_up[kJet-1] += EventWeight_FR_comb_up;
-	_EventWeight_FR_JetBin_down[kJet-1] += EventWeight_FR_comb_down;
+	_EventWeight_FR_JetBin_b_up[kJet-1] += EventWeight_FR_comb_b_up;
+	_EventWeight_FR_JetBin_b_down[kJet-1] += EventWeight_FR_comb_b_down;
+	_EventWeight_FR_JetBin_q_up[kJet-1] += EventWeight_FR_comb_q_up;
+	_EventWeight_FR_JetBin_q_down[kJet-1] += EventWeight_FR_comb_q_down;
+	_EventWeight_FR_JetBin_g_up[kJet-1] += EventWeight_FR_comb_g_up;
+	_EventWeight_FR_JetBin_g_down[kJet-1] += EventWeight_FR_comb_g_down;
+	_EventWeight_FR_JetBin_b_pt_up[kJet-1] += EventWeight_FR_comb_b_pt_up;
+	_EventWeight_FR_JetBin_b_pt_down[kJet-1] += EventWeight_FR_comb_b_pt_down;
+	_EventWeight_FR_JetBin_q_pt_up[kJet-1] += EventWeight_FR_comb_q_pt_up;
+	_EventWeight_FR_JetBin_q_pt_down[kJet-1] += EventWeight_FR_comb_q_pt_down;
+	_EventWeight_FR_JetBin_g_pt_up[kJet-1] += EventWeight_FR_comb_g_pt_up;
+	_EventWeight_FR_JetBin_g_pt_down[kJet-1] += EventWeight_FR_comb_g_pt_down;
 
       }
 
       _EventWeight_FR += _EventWeight_FR_JetBin[kJet-1];
-      _EventWeight_FR_up += _EventWeight_FR_JetBin_up[kJet-1];
-      _EventWeight_FR_down += _EventWeight_FR_JetBin_down[kJet-1];
+      _EventWeight_FR_b_up += _EventWeight_FR_JetBin_b_up[kJet-1];
+      _EventWeight_FR_b_down += _EventWeight_FR_JetBin_b_down[kJet-1];
+      _EventWeight_FR_q_up += _EventWeight_FR_JetBin_q_up[kJet-1];
+      _EventWeight_FR_q_down += _EventWeight_FR_JetBin_q_down[kJet-1];
+      _EventWeight_FR_g_up += _EventWeight_FR_JetBin_g_up[kJet-1];
+      _EventWeight_FR_g_down += _EventWeight_FR_JetBin_g_down[kJet-1];
+      _EventWeight_FR_b_pt_up += _EventWeight_FR_JetBin_b_pt_up[kJet-1];
+      _EventWeight_FR_b_pt_down += _EventWeight_FR_JetBin_b_pt_down[kJet-1];
+      _EventWeight_FR_q_pt_up += _EventWeight_FR_JetBin_q_pt_up[kJet-1];
+      _EventWeight_FR_q_pt_down += _EventWeight_FR_JetBin_q_pt_down[kJet-1];
+      _EventWeight_FR_g_pt_up += _EventWeight_FR_JetBin_g_pt_up[kJet-1];
+      _EventWeight_FR_g_pt_down += _EventWeight_FR_JetBin_g_pt_down[kJet-1];
 
     }
 
