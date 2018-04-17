@@ -47,13 +47,53 @@ int main(int argc, char** argv) {
   bool isData = false;
   if (status_sample.compare("mc") == 0) isMC = true;
   if (status_sample.compare("data") == 0) isData = true;
-  string output = *(argv + 2);
-  
-  string input = *(argv + 3);
 
-  bool overwrite = false;
-  if(argv[3])
-    overwrite = *(argv + 4);
+
+  string output;
+  for (int i = 1; i < argc; ++i) {
+    if(std::string(argv[i]) == "--output") {
+      if (i + 1 < argc) {
+	output = argv[i+1];
+	break;
+      } else {
+	std::cerr << "--output option requires one argument." << std::endl;
+	return 1;
+      }      
+    }  
+  }
+  if(output==""){
+    std::cerr << "--output argument required" << std::endl;
+    return 1;
+  }
+    
+  
+
+  string input;
+  for (int i = 1; i < argc; ++i) {
+    if(std::string(argv[i]) == "--input") {
+      if (i + 1 < argc) {
+	input = argv[i+1];
+	break;
+      } else {
+	std::cerr << "--intput option requires one argument." << std::endl;
+	return 1;
+      }      
+    }  
+  }
+  if(input==""){
+    std::cerr << "--input argument required" << std::endl;
+    return 1;
+  }
+
+
+  bool overwrite;
+  for (int i = 1; i < argc; ++i) {
+    if(std::string(argv[i]) == "--overwrite") {
+      overwrite = true;
+      break;
+    }
+  }
+ 
 
   TFile* f_new = TFile::Open(output.c_str());
   if(f_new!=0 && !overwrite){
@@ -90,12 +130,13 @@ int main(int argc, char** argv) {
   TMVA::Reader* MVA_sig1_b_reader = BookJetMVAReader("BDT_weights","/BDT_sig1_b_noExtVar_BDT.weights.xml");
 
   int nentries = tree->GetEntries();
+  cout<<"Nentries="<<nentries<<endl;
 
   for (int iEntry = 0; iEntry < nentries ; iEntry++){
 
     tree->GetEntry(iEntry);
 
-    if(iEntry%1000==0) cout<<"Entry #"<<iEntry<<endl;
+   if(iEntry%10000==0) cout<<"Entry #"<<iEntry<<" "<< int(100*float(iEntry)/nentries)<<"%"<<endl;
   
     _nJet = tree->nJet;
 
