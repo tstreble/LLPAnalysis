@@ -472,15 +472,16 @@ int main(int argc, char** argv) {
   tree_new->Branch("EventWeight_FR_g_pt_down", &_EventWeight_FR_g_pt_down,   "EventWeight_FR_g_pt_down/F");
 
 
-  //for (int iEntry = 0; iEntry < tree->GetEntries() ; iEntry++){
-  for (int iEntry = 0; iEntry < 10 ; iEntry++){
+  int nentries = tree->GetEntries();
+  cout<<"Nentries="<<nentries<<endl;
+
+  for (int iEntry = 0; iEntry < tree->GetEntries() ; iEntry++){
 
     tree->GetEntry(iEntry);
     LLPtree->GetEntry(iEntry);
 
+    if(iEntry%10000==0) cout<<"Entry #"<<iEntry<<" "<< int(100*float(iEntry)/nentries)<<"%"<<endl;
 
-    //if(iEntry%1000==0) 
-      cout<<"Entry #"<<iEntry<<endl;
 
     _nJet = tree->nJet;
 

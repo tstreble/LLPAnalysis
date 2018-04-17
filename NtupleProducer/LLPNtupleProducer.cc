@@ -93,12 +93,30 @@ int main(int argc, char** argv) {
   float _DiElectron_mass;
 
   int _nJet;
+
   bool _Jet_isPresel[kJetMax];
   bool _Jet_isSel[kJetMax];    
   int _nJet_presel;
   int _Jet_presel_index[kJetMax];      
   int _nJet_sel;
-  int _Jet_sel_index[kJetMax];      
+  int _Jet_sel_index[kJetMax];   
+
+  float _JetUp_pt[kJetMax];
+  bool _JetUp_isPresel[kJetMax];
+  bool _JetUp_isSel[kJetMax];    
+  int _nJetUp_presel;
+  int _JetUp_presel_index[kJetMax];      
+  int _nJetUp_sel;
+  int _JetUp_sel_index[kJetMax];  
+
+  float _JetDown_pt[kJetMax];
+  bool _JetDown_isPresel[kJetMax];
+  bool _JetDown_isSel[kJetMax];    
+  int _nJetDown_presel;
+  int _JetDown_presel_index[kJetMax];      
+  int _nJetDown_sel;
+  int _JetDown_sel_index[kJetMax];  
+   
 
   tree_new->Branch("nMuon",             &_nMuon,             "nMuon/I");
   tree_new->Branch("Muon_isPresel",     &_Muon_isPresel,     "Muon_isPresel[nMuon]/O");
@@ -120,6 +138,25 @@ int main(int argc, char** argv) {
   tree_new->Branch("Jet_presel_index", &_Jet_presel_index, "Jet_presel_index[nJet_presel]/I");
   tree_new->Branch("nJet_sel",      &_nJet_sel,      "nJet_sel/I");
   tree_new->Branch("Jet_sel_index", &_Jet_sel_index, "Jet_sel_index[nJet_sel]/I");
+
+  if(isMC){
+    tree_new->Branch("JetUp_pt",           &_JetUp_pt,           "JetUp_pt[nJet]/F");
+    tree_new->Branch("JetUp_isPresel",     &_JetUp_isPresel,     "JetUp_isPresel[nJet]/O");
+    tree_new->Branch("JetUp_isSel",        &_JetUp_isSel,        "JetUp_isSel[nJet]/O");
+    tree_new->Branch("nJetUp_presel",      &_nJetUp_presel,      "nJetUp_presel/I");
+    tree_new->Branch("JetUp_presel_index", &_JetUp_presel_index, "JetUp_presel_index[nJet_presel]/I");
+    tree_new->Branch("nJetUp_sel",      &_nJetUp_sel,      "nJetUp_sel/I");
+    tree_new->Branch("JetUp_sel_index", &_JetUp_sel_index, "JetUp_sel_index[nJet_sel]/I");
+    
+    tree_new->Branch("JetDown_pt",           &_JetDown_pt,           "JetDown_pt[nJet]/F");
+    tree_new->Branch("JetDown_isPresel",     &_JetDown_isPresel,     "JetDown_isPresel[nJet]/O");
+    tree_new->Branch("JetDown_isSel",        &_JetDown_isSel,        "JetDown_isSel[nJet]/O");
+    tree_new->Branch("nJetDown_presel",      &_nJetDown_presel,      "nJetDown_presel/I");
+    tree_new->Branch("JetDown_presel_index", &_JetDown_presel_index, "JetDown_presel_index[nJet_presel]/I");
+    tree_new->Branch("nJetDown_sel",      &_nJetDown_sel,      "nJetDown_sel/I");
+    tree_new->Branch("JetDown_sel_index", &_JetDown_sel_index, "JetDown_sel_index[nJet_sel]/I");
+  }
+
 
   int nentries = tree->GetEntries();
   cout<<"Nentries="<<nentries<<endl;
@@ -197,11 +234,19 @@ int main(int argc, char** argv) {
     _nJet = tree->nJet;
     _nJet_presel = 0;
     _nJet_sel = 0;
+    _nJetUp_presel = 0;
+    _nJetUp_sel = 0;
+    _nJetDown_presel = 0;
+    _nJetDOwn_sel = 0;
 
     for(unsigned int i_jet=0; i_jet<_nJet;i_jet++){
 
-      bool ispresel = tree->Jet_pt[i_jet]>25;
-      ispresel &= abs(tree->Jet_eta[i_jet])<2.4;
+      if(isMC){
+	_JetUp_pt[i_jet]   = tree->Jet_pt[i_jet]*(1+tree->Jet_jecUncertTotal[i_jet]);
+	_JetDown_pt[i_jet] = tree->Jet_pt[i_jet]*(1-tree->Jet_jecUncertTotal[i_jet]);
+      }
+
+      bool ispresel = abs(tree->Jet_eta[i_jet])<2.4;
       ispresel &= tree->Jet_jetId[i_jet]>0;
 
       //Lepton veto
@@ -217,20 +262,46 @@ int main(int argc, char** argv) {
 
       bool issel = ispresel && (tree->Jet_puId[i_jet]&1);
 
-      _Jet_isPresel[i_jet] = ispresel;
-      _Jet_isSel[i_jet] = issel; //Tight PU jet ID
-      
+      _Jet_isPresel[i_jet] = ispresel && tree->Jet_pt[i_jet]>25;
+      _Jet_isSel[i_jet] = issel && tree->Jet_pt[i_jet]>25; //Tight PU jet ID
 
-      if(ispresel){
+      if(_Jet_isPresel[i_jet]){
 	_Jet_presel_index[_nJet_presel] = i_jet;
 	_nJet_presel++;
-	if(issel){
+	if(_Jet_isSel[i_jet]){
 	  _Jet_sel_index[_nJet_sel] = i_jet;
 	  _nJet_sel++;
 	}
       }
 
-      
+
+      if(isMC){
+
+	_JetUp_isPresel[i_jet] = ispresel && _JetUp_pt[i_jet]>25;
+	_JetDown_isPresel[i_jet] = ispresel && _JetDown_pt[i_jet]>25;     
+	_JetUp_isSel[i_jet] = issel && _JetUp_pt[i_jet]>25;
+	_JetDown_isSel[i_jet] = issel && _JetDown_pt[i_jet]>25;
+	
+	if(_JetUp_isPresel[i_jet]){
+	  _JetUp_presel_index[_nJet_presel] = i_jet;
+	  _nJetUp_presel++;
+	  if(_JetUp_isSel[i_jet]){
+	    _JetUp_sel_index[_nJet_sel] = i_jet;
+	    _nJetUp_sel++;
+	  }
+	}
+	
+	if(_JetDown_isPresel[i_jet]){
+	  _JetDown_presel_index[_nJet_presel] = i_jet;
+	  _nJetDown_presel++;
+	  if(_JetDown_isSel[i_jet]){
+	    _JetDown_sel_index[_nJet_sel] = i_jet;
+	    _nJetDown_sel++;
+	  }
+	}
+
+      }
+     
 
     }
             
