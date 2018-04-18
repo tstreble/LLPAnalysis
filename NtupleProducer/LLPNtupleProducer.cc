@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
     _nJetUp_presel = 0;
     _nJetUp_sel = 0;
     _nJetDown_presel = 0;
-    _nJetDOwn_sel = 0;
+    _nJetDown_sel = 0;
 
     for(unsigned int i_jet=0; i_jet<_nJet;i_jet++){
 
